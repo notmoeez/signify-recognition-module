@@ -192,8 +192,8 @@ import { Camera } from 'expo-camera';
 import React, { useEffect, useState } from 'react';
 import * as tf from '@tensorflow/tfjs'
 import { cameraWithTensors } from '@tensorflow/tfjs-react-native';
-import { Platform, StyleSheet } from 'react-native';
-import * as mobilenet from '@tensorflow-models/mobilenet';
+import { Platform, StyleSheet, TouchableOpacity } from 'react-native';
+// import * as mobilenet from '@tensorflow-models/mobilenet';
 
 import { View, Text } from 'react-native';
 import { setdiff1dAsync } from '@tensorflow/tfjs';
@@ -208,6 +208,7 @@ export default function App(props) {
   const [tfReady, setTfReady] = useState(false)
   const [model, setModel] = useState(false)
   const [displayText, setDisplayText] = useState("loading models")
+  const [cameraType, setCameraType] = useState("back")
   const windowWidth = useWindowDimensions().width;
   const windowHeight = useWindowDimensions().height;
   useEffect(() => {
@@ -216,10 +217,10 @@ export default function App(props) {
       await tf.ready()
       console.log("tf ready loading, model")
       // const model = await mobilenet.load()
-      const model = await tf.loadLayersModel('https://teachablemachine.withgoogle.com/models/3xj-Z7pQR/model.json');
+      const model = await tf.loadLayersModel('https://teachablemachine.withgoogle.com/models/rhC6ywXBN/model.json');
       console.log("model loaded")
       setModel(model)
-      setDisplayText("loaded Models")
+      setDisplayText("Translating...")
       setTfReady(true)
     }
     checkTf()
@@ -227,6 +228,8 @@ export default function App(props) {
 
   const [hasPermission, setHasPermission] = useState(null);
   const [type, setType] = useState(Camera.Constants.Type.back);
+
+  const changeCameraView = () => cameraType == 'back' ? setType(Camera.Constants.Type.front) : setType(Camera.Constants.Type.back)
 
   useEffect(() => {
     (async () => {
@@ -256,10 +259,12 @@ export default function App(props) {
         const highestPrediction = predictions.indexOf(
           Math.max.apply(null, predictions),
         );
+        // console.log(predictions)
         // console.log(highestPrediction);
         // console.log(predictions[highestPrediction]);
         // console.log(RESULT_MAPPING[highestPrediction])
-        setDisplayText(RESULT_MAPPING[highestPrediction]);
+        predictions[highestPrediction] > 0.90 ? setDisplayText(RESULT_MAPPING[highestPrediction]) : setDisplayText("");
+        ;
         // setAllTranslations(prevTranslations => prevTranslations + ' ' + RESULT_MAPPING[highestPrediction]);
         // console.log(translation);
         // console.log('Predictions:', predictions);
@@ -303,7 +308,7 @@ export default function App(props) {
           width: windowWidth * 0.7,
           height: windowHeight * 0.7,
         }}
-        type={Camera.Constants.Type.back}
+        type={type}
         // Tensor related props
         cameraTextureHeight={textureDims.height}
         cameraTextureWidth={textureDims.width}
@@ -313,6 +318,7 @@ export default function App(props) {
         onReady={handleCameraStream}
         autorender={AUTORENDER}
       />) : <View />}
+      <TouchableOpacity style={styles.cameraBtn} onPress={changeCameraView}><Text>Camera</Text></TouchableOpacity>
     </View>
   );
 }
@@ -329,6 +335,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
 
   },
+  cameraBtn: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: 'red'
+  }
 
 
 })
