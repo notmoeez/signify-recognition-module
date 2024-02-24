@@ -28,7 +28,7 @@
 //     const loadModel = async () => {
 //       await tf.ready();
 //       try {
-//         const model = await tf.loadLayersModel('https://teachablemachine.withgoogle.com/models/3xj-Z7pQR/model.json');
+//         const model = await tf.loadLayersModel('https://teachablemachine.withgoogle.com/models/rhC6ywXBN/model.json');
 //         setModel(model);
 //         console.log("MODEL LOADED")
 //       } catch (error) {
@@ -189,7 +189,7 @@
 
 
 import { Camera } from 'expo-camera';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as tf from '@tensorflow/tfjs'
 import { cameraWithTensors } from '@tensorflow/tfjs-react-native';
 import { Platform, StyleSheet, TouchableOpacity } from 'react-native';
@@ -211,6 +211,7 @@ export default function App(props) {
   const [cameraType, setCameraType] = useState("back")
   const windowWidth = useWindowDimensions().width;
   const windowHeight = useWindowDimensions().height;
+
   useEffect(() => {
     let checkTf = async () => {
       console.log("loading models")
@@ -229,7 +230,15 @@ export default function App(props) {
   const [hasPermission, setHasPermission] = useState(null);
   const [type, setType] = useState(Camera.Constants.Type.back);
 
-  const changeCameraView = () => cameraType == 'back' ? setType(Camera.Constants.Type.front) : setType(Camera.Constants.Type.back)
+  const changeCameraView = () => {
+    if (cameraType === 'back') {
+      setType(Camera.Constants.Type.front)
+      setCameraType("front")
+    } else {
+      setType(Camera.Constants.Type.back)
+      setCameraType("back")
+    }
+  }
 
   useEffect(() => {
     (async () => {
