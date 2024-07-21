@@ -1,6 +1,6 @@
 // import React, { useEffect, useState } from 'react';
 // import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-// import { Camera } from 'expo-camera';
+// import { Camera } from 'expo-camera/legacy';
 // import * as tf from '@tensorflow/tfjs';
 // import { bundleResourceIO, decodeJpeg } from '@tensorflow/tfjs-react-native';
 // import * as FileSystem from 'expo-file-system';
@@ -188,7 +188,8 @@
 
 
 
-import { Camera } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { Camera, CameraType } from 'expo-camera/legacy';
 import React, { useEffect, useRef, useState } from 'react';
 import * as tf from '@tensorflow/tfjs'
 import { cameraWithTensors } from '@tensorflow/tfjs-react-native';
@@ -201,6 +202,7 @@ import { useWindowDimensions } from 'react-native';
 
 const TensorCamera = cameraWithTensors(Camera);
 
+
 const RESULT_MAPPING = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V",
   "W", "X", "Y", "Z"];
 
@@ -208,42 +210,56 @@ export default function App(props) {
   const [tfReady, setTfReady] = useState(false)
   const [model, setModel] = useState(false)
   const [displayText, setDisplayText] = useState("loading models")
-  const [cameraType, setCameraType] = useState("back")
+  const [cameraType, setCameraType] = useState(Camera.Constants.Type.back)
   const windowWidth = useWindowDimensions().width;
   const windowHeight = useWindowDimensions().height;
 
   useEffect(() => {
     let checkTf = async () => {
-      console.log("loading models")
-      await tf.ready()
-      console.log("tf ready loading, model")
-      // const model = await mobilenet.load()
-      const model = await tf.loadLayersModel('https://teachablemachine.withgoogle.com/models/rhC6ywXBN/model.json');
-      console.log("model loaded")
-      setModel(model)
-      setDisplayText("Translating...")
-      setTfReady(true)
+      try {
+
+        console.log("loading models")
+        await tf.ready()
+        console.log("tf ready loading, model")
+        // const model = await mobilenet.load()
+        const model = await tf.loadLayersModel('https://teachablemachine.withgoogle.com/models/4FwokLZWx/model.json');
+        console.log("model loaded")
+        setModel(model)
+        setDisplayText("Translating...")
+        setTfReady(true)
+      } catch (error) {
+        console.log(error)
+      }
     }
     checkTf()
   }, [])
 
   const [hasPermission, setHasPermission] = useState(null);
-  const [type, setType] = useState(Camera.Constants.Type.back);
+  const [type, setType] = useState('back');
 
+  // const changeCameraView = () => {
+  //   if (cameraType === 'back') {
+  //     setType('front')
+  //     setCameraType("front")
+  //   } else {
+  //     setType('back')
+  //     setCameraType("back")
+  //   }
+  // }
   const changeCameraView = () => {
-    if (cameraType === 'back') {
-      setType(Camera.Constants.Type.front)
-      setCameraType("front")
-    } else {
-      setType(Camera.Constants.Type.back)
-      setCameraType("back")
-    }
-  }
+    setCameraType((prevType) =>
+      prevType === Camera.Constants.Type.back ? Camera.Constants.Type.front : Camera.Constants.Type.back
+    );
+  };
 
   useEffect(() => {
     (async () => {
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === 'granted');
+      try {
+        const { status } = await Camera.requestCameraPermissionsAsync();
+        setHasPermission(status === 'granted');
+      } catch (error) {
+        console.log(error)
+      }
     })();
   }, []);
 
@@ -267,6 +283,7 @@ export default function App(props) {
         const predictions = predictionsData.dataSync();
         const highestPrediction = predictions.indexOf(
           Math.max.apply(null, predictions),
+
         );
         // console.log(predictions)
         // console.log(highestPrediction);
@@ -317,7 +334,7 @@ export default function App(props) {
           width: windowWidth * 0.7,
           height: windowHeight * 0.7,
         }}
-        type={type}
+        type={CameraType}
         // Tensor related props
         cameraTextureHeight={textureDims.height}
         cameraTextureWidth={textureDims.width}
